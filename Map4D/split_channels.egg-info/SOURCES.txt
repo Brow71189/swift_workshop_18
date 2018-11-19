@@ -1,0 +1,9 @@
+README.md
+setup.py
+nionswift_plugin/map_4d/Map4D.py
+nionswift_plugin/map_4d/__init__.py
+split_channels.egg-info/PKG-INFO
+split_channels.egg-info/SOURCES.txt
+split_channels.egg-info/dependency_links.txt
+split_channels.egg-info/not-zip-safe
+split_channels.egg-info/top_level.txt

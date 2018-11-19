@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: split-channels
+Version: 0.1.0
+Summary: Map integral of a square region in a 4d dataset
+Home-page: UNKNOWN
+Author: Andreas Mittelberger
+Author-email: Brow71189@gmail.com
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: ~=3.5
