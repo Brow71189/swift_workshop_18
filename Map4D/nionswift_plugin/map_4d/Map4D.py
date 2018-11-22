@@ -14,7 +14,7 @@ mask_data = region.mask_xdata_with_shape(src.xdata.data_shape[2:]).data
 new_data = numpy.sum(src.xdata.data * mask_data, axis=(-2, -1))
 target.set_data(new_data)
 target.set_dimensional_calibrations(src.xdata.dimensional_calibrations[:2])
-target.set_intenstiy_calibration(src.xdata.intensity_calibration)
+target.set_intensity_calibration(src.xdata.intensity_calibration)
 """
 
 processing_descriptions = {
