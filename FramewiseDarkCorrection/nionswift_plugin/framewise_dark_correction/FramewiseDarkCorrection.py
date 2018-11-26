@@ -37,7 +37,7 @@ else: # spectrum is on top of center
     corrected_image_bot = None
 dark_image = None # don't hold references to unused objects so that garbage collector can free the memorz
 if bin_spectrum:
-    target.set_data(np.mean(corrected_image, axis=-2))
+    target.set_data(np.sum(corrected_image, axis=-2))
     target.set_dimensional_calibrations(src1.xdata.dimensional_calibrations[:2] + src1.xdata.dimensional_calibrations[3:])
 else:
     target.set_data(corrected_image)
