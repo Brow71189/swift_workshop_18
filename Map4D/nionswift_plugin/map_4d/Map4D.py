@@ -9,9 +9,14 @@ from nion.typeshed import API_1_0 as API
 _ = gettext.gettext
 
 map_4d_script = """
-import numpy
+import numpy as np
 mask_data = region.mask_xdata_with_shape(src.xdata.data_shape[2:]).data
-new_data = numpy.sum(src.xdata.data * mask_data, axis=(-2, -1))
+data = src.xdata.data
+data_shape = np.array(data.shape)
+crop_area = np.rint(np.array(region.bounds) * np.array((data_shape[2:], data_shape[2:]))).astype(np.int)
+new_data = np.sum(src.xdata.data[...,
+                                 crop_area[0,0]:crop_area[0,0]+crop_area[1,0],
+                                 crop_area[0,1]:crop_area[0,1]+crop_area[1,1]], axis=(-2, -1))
 target.set_data(new_data)
 target.set_dimensional_calibrations(src.xdata.dimensional_calibrations[:2])
 target.set_intensity_calibration(src.xdata.intensity_calibration)

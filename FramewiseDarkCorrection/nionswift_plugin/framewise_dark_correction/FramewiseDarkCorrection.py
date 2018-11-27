@@ -1,6 +1,5 @@
 # system imports
 import gettext
-import time
 from nion.swift.model import DataItem
 from nion.swift.model import DocumentModel
 from nion.swift import Facade
@@ -12,6 +11,7 @@ _ = gettext.gettext
 
 correct_dark_script = """
 import numpy as np
+
 data = src1.xdata.data
 data_shape = np.array(src1.xdata.data.shape)
 cam_center = int(round(data_shape[-2]/2)) if camera_center == -1 else camera_center
@@ -21,6 +21,7 @@ bottom_dark_area = np.rint(np.array(bottom_dark_region.bounds) * data_shape[2:])
 spectrum_range_y = np.array((spectrum_area[0,0], spectrum_area[0,0] + spectrum_area[1, 0]))
 top_dark_area_range_y = np.array((top_dark_area[0,0], top_dark_area[0,0] + top_dark_area[1, 0]))
 bottom_dark_area_range_y = np.array((bottom_dark_area[0,0], bottom_dark_area[0,0] + bottom_dark_area[1, 0]))
+
 if (cam_center >= spectrum_range_y).all(): # spectrum is above center
     dark_image = np.mean(data[..., top_dark_area_range_y[0]:top_dark_area_range_y[1], :], axis=-2, keepdims=True)
     corrected_image = data[..., spectrum_range_y[0]:spectrum_range_y[1], :] - np.repeat(dark_image, spectrum_range_y[1]-spectrum_range_y[0], axis=-2)
@@ -35,7 +36,18 @@ else: # spectrum is on top of center
     corrected_image = np.concatenate((corrected_image_top, corrected_image_bot), axis=-2)
     corrected_image_top = None
     corrected_image_bot = None
+
 dark_image = None # don't hold references to unused objects so that garbage collector can free the memorz
+
+if gain_image:
+    gain_data = gain_image.xdata.data
+    if gain_data.shape == corrected_image.shape[2:]:
+        corrected_image *= gain_image.xdata.data
+    elif gain_data.shape == data.shape[2:]:
+        corrected_image *= gain_image.xdata.data[spectrum_range_y[0]:spectrum_range_y[1]]
+    else:
+        raise ValueError('Shape of gain image has to match last two dimensions input data.')
+
 if bin_spectrum:
     target.set_data(np.sum(corrected_image, axis=-2))
     target.set_dimensional_calibrations(src1.xdata.dimensional_calibrations[:2] + src1.xdata.dimensional_calibrations[3:])
@@ -64,7 +76,9 @@ correct_dark_processing_descriptions = {
          'parameters': [{'name': 'bin_spectrum', 'type': 'boolean', 'value_default': True, 'value': True,
                          'label': 'bin spectrum to 1d'},
                         {'name': 'camera_center', 'type': 'integral', 'value_default': -1, 'value': -1,
-                         'label': 'camera center', 'value_min': -1, 'value_max': 2048}],
+                         'label': 'camera center', 'value_min': -1, 'value_max': 2048},
+                         {'name': 'gain_image', 'type': 'data_item', 'label': 'gain image', 'value': None,
+                         'value_default': None}],
          'title': 'Framewise dark correction'
          }
 }
