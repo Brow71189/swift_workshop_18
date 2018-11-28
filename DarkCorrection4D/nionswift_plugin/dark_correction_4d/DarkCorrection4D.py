@@ -1,7 +1,9 @@
 # system imports
 import gettext
+import numpy as np
 from nion.swift.model import DataItem
 from nion.swift.model import DocumentModel
+from nion.swift.model import Symbolic
 from nion.swift import Facade
 
 # local libraries
@@ -84,34 +86,50 @@ calculate_average_processing_descriptions = {
          }
 }
 
+class TotalBin4D:
+    def __init__(self, computation, **kwargs):
+        self.computation = computation
+        
+    def execute(self, src, test):
+        self.__new_data = np.mean(src.xdata.data, axis=(-2, -1))
+    
+    def commit(self):
+        self.computation.set_referenced_data('target', self.__new_data)
+        
 class DarkCorrection4DMenuItem:
 
     menu_id = "_processing_menu"  # required, specify menu_id where this item will go
     menu_item_name = _("4D Dark Correction")  # menu item name
 
     DocumentModel.DocumentModel.register_processing_descriptions(correct_dark_processing_descriptions)
-    DocumentModel.DocumentModel.register_processing_descriptions(calculate_average_processing_descriptions)
+    #DocumentModel.DocumentModel.register_processing_descriptions(calculate_average_processing_descriptions)
+    
+    def __init__(self, api):
+        self.__api = api
 
     def menu_item_execute(self, window: API.DocumentWindow) -> None:
         try:
             document_controller = window._document_controller
             display_specifier = document_controller.selected_display_specifier
-
-            if display_specifier.data_item:
-                total_bin_data_item = document_controller.document_model.make_data_item_with_computation(
-                    "nion.total_bin_4d_SI", [(display_specifier.data_item, None)],
-                    {'src': []})
-                new_display_specifier = DataItem.DisplaySpecifier.from_data_item(total_bin_data_item)
-                document_controller.display_data_item(new_display_specifier)
-                api_total_bin_data_item = Facade.DataItem(total_bin_data_item)
-                api_data_item = Facade.DataItem(display_specifier.data_item)
+            data_item = window.target_data_item
+            if data_item:
+                total_bin_data_item = self.__api.library.create_data_item(title='Total bin 4D of' + display_specifier.data_item.title)
+                computation = self.__api.library.create_computation('nion.total_bin_4d_SI',
+                                                                    inputs={'src': data_item,
+                                                                            'test': True},
+                                                                    outputs={'target': total_bin_data_item})
+                computation._computation.source = data_item._data_item
+                window.display_data_item(total_bin_data_item)
+                
+                api_total_bin_data_item = total_bin_data_item
+                api_data_item = data_item
                 dark_subtract_area_graphic = api_total_bin_data_item.add_rectangle_region(0.8, 0.5, 0.4, 1.0)
                 dark_subtract_area_graphic.label = 'Dark subtract area'
                 crop_region = api_data_item.add_rectangle_region(0.5, 0.5, 1.0, 1.0)
                 crop_region.label = 'Crop'
                 
                 dark_corrected_data_item = document_controller.document_model.make_data_item_with_computation(
-                        "nion.4d_dark_correction", [(display_specifier.data_item, None), (total_bin_data_item, None)],
+                        "nion.4d_dark_correction", [(display_specifier.data_item, None), (total_bin_data_item._data_item, None)],
                         {"src1": [crop_region._graphic], "src2": [dark_subtract_area_graphic._graphic]})
                 new_display_specifier2 = DataItem.DisplaySpecifier.from_data_item(dark_corrected_data_item)
                 document_controller.display_data_item(new_display_specifier2)
@@ -131,7 +149,9 @@ class DarkCorrection4DExtension:
         # grab the api object.
         api = api_broker.get_api(version="1", ui_version="1")
         # be sure to keep a reference or it will be closed immediately.
-        self.__menu_item_ref = api.create_menu_item(DarkCorrection4DMenuItem())
+        self.__menu_item_ref = api.create_menu_item(DarkCorrection4DMenuItem(api))
 
     def close(self):
         self.__menu_item_ref.close()
+        
+Symbolic.register_computation_type('nion.total_bin_4d_SI', TotalBin4D)
