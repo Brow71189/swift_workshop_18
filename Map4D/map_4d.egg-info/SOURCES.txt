@@ -1,9 +1,0 @@
-README.md
-setup.py
-map_4d.egg-info/PKG-INFO
-map_4d.egg-info/SOURCES.txt
-map_4d.egg-info/dependency_links.txt
-map_4d.egg-info/not-zip-safe
-map_4d.egg-info/top_level.txt
-nionswift_plugin/map_4d/Map4D.py
-nionswift_plugin/map_4d/__init__.py
